@@ -36,6 +36,7 @@ app.post("/webhook", (req, res) => {
 
     const { tool, account_id, verification_code } = req.body;
 
+  
     if (tool === "verify_customer") {
         const customer = customers[account_id];
 
@@ -66,6 +67,7 @@ app.post("/webhook", (req, res) => {
         });
     }
 
+    
     if (tool === "get_account_details") {
         const session = sessions[account_id];
 
@@ -130,7 +132,10 @@ app.post("/webhook", (req, res) => {
             });
         }
 
-        if (session.state !== "AUTHENTICATED" && session.state !== "NEGOTIATION") {
+        if (
+            session.state !== "AUTHENTICATED" &&
+            session.state !== "NEGOTIATION"
+        ) {
             return res.status(400).json({
                 success: false,
                 message: `Cannot log a payment promise while conversation is in ${session.state} state.`
@@ -157,7 +162,11 @@ app.post("/webhook", (req, res) => {
             });
         }
 
-        if (session.state !== "AUTHENTICATED" && session.state !== "NEGOTIATION") {
+        if (
+            session.state !== "AUTHENTICATED" &&
+            session.state !== "NEGOTIATION" &&
+            session.state !== "PTP_COLLECTED"
+        ) {
             return res.status(400).json({
                 success: false,
                 message: `Cannot send payment link while conversation is in ${session.state} state.`
@@ -166,28 +175,63 @@ app.post("/webhook", (req, res) => {
 
         return res.json({
             success: true,
-            channel: channel,
-            message: `Payment link sent successfully via ${channel} to registered mobile number.`
+            channel: channel || "SMS",
+            message: `Payment link sent successfully via ${channel || "SMS"} to registered mobile number.`
         });
     }
 
-
-
+    
     if (tool === "mark_disposition") {
         const { status, notes } = req.body;
-        const session = getSession(account_id);
+        const session = sessions[account_id];
 
-        if (!session || !session.authenticated) {
-            return res.status(403).json({
-                success: false,
-                message: "Customer must be authenticated before marking a disposition."
+        if (status === "WRONG_PERSON") {
+            if (sessions[account_id]) {
+                updateState(account_id, "CALL_ENDED");
+            }
+
+            return res.json({
+                success: true,
+                disposition_logged: status,
+                notes: notes || "",
+                state: "CALL_ENDED",
+                timestamp: new Date().toISOString()
             });
         }
 
-        if (session.state !== "PTP_COLLECTED") {
+        
+        if (!session || !session.authenticated) {
+            return res.status(403).json({
+                success: false,
+                message: "Customer must be authenticated before marking this disposition."
+            });
+        }
+
+       
+        if (
+            session.state !== "AUTHENTICATED" &&
+            session.state !== "NEGOTIATION" &&
+            session.state !== "PTP_COLLECTED"
+        ) {
             return res.status(400).json({
                 success: false,
                 message: `Cannot mark disposition while conversation is in ${session.state} state.`
+            });
+        }
+
+        
+        if (
+            status === "ALREADY_PAID" ||
+            status === "DO_NOT_CALL"
+        ) {
+            updateState(account_id, "CALL_ENDED");
+
+            return res.json({
+                success: true,
+                disposition_logged: status,
+                notes: notes || "",
+                state: "CALL_ENDED",
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -195,9 +239,11 @@ app.post("/webhook", (req, res) => {
             success: true,
             disposition_logged: status,
             notes: notes || "",
+            state: session.state,
             timestamp: new Date().toISOString()
         });
     }
+
 
     if (tool === "end_call") {
         const session = getSession(account_id);
@@ -209,7 +255,11 @@ app.post("/webhook", (req, res) => {
             });
         }
 
-        if (session.state !== "PTP_COLLECTED") {
+        if (
+            session.state !== "PTP_COLLECTED" &&
+            session.state !== "CALL_ENDED" &&
+            session.state !== "ESCALATED"
+        ) {
             return res.status(400).json({
                 success: false,
                 message: `Call cannot be ended from ${session.state} state.`
@@ -257,13 +307,13 @@ app.post("/webhook", (req, res) => {
         });
     }
 
-
-
+    
     return res.status(400).json({
         success: false,
         message: "Unknown tool"
     });
 });
+
 
 const PORT = process.env.PORT || 3000;
 
