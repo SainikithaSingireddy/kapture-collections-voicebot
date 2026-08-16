@@ -1,0 +1,158 @@
+{
+  "verify_customer": {
+    "name": "verify_customer",
+    "description": "Verify customer identity before any debt information is disclosed.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        },
+        "verification_code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id",
+        "verification_code"
+      ]
+    }
+  },
+  "get_account_details": {
+    "name": "get_account_details",
+    "description": "Retrieve overdue account details after successful authentication.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id"
+      ]
+    }
+  },
+  "start_negotiation": {
+    "name": "start_negotiation",
+    "description": "Start payment negotiation for an authenticated customer.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id"
+      ]
+    }
+  },
+  "log_promise_to_pay": {
+    "name": "log_promise_to_pay",
+    "description": "Record a customer's promise to pay.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        },
+        "promise_date": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id",
+        "promise_date"
+      ]
+    }
+  },
+  "send_payment_link": {
+    "name": "send_payment_link",
+    "description": "Send a payment link through the requested channel.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "sms",
+            "whatsapp"
+          ]
+        }
+      },
+      "required": [
+        "account_id",
+        "channel"
+      ]
+    }
+  },
+  "mark_disposition": {
+    "name": "mark_disposition",
+    "description": "Record the outcome of the conversation.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id",
+        "status"
+      ]
+    }
+  },
+  "escalate_to_agent": {
+    "name": "escalate_to_agent",
+    "description": "Escalate a case to a human agent.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id",
+        "reason"
+      ]
+    }
+  },
+  "end_call": {
+    "name": "end_call",
+    "description": "End a completed customer conversation.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id"
+      ]
+    }
+  }
+}
